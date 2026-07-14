@@ -2,7 +2,7 @@ import { GoogleGenAI, Type } from "@google/genai";
 
 export type StyleAnalysis = {
   style: BilingualText;
-  colors: BilingualText[];
+  colors: ColorKeyword[];
   mood: BilingualText[];
   layout: BilingualText;
   lighting: BilingualText;
@@ -13,6 +13,10 @@ export type StyleAnalysis = {
 type BilingualText = {
   en: string;
   zh: string;
+};
+
+type ColorKeyword = BilingualText & {
+  hex: string;
 };
 
 const bilingualTextSchema = {
@@ -30,6 +34,26 @@ const bilingualTextSchema = {
   required: ["en", "zh"],
 };
 
+const colorKeywordSchema = {
+  type: Type.OBJECT,
+  properties: {
+    en: {
+      type: Type.STRING,
+      description: "Short English color keyword.",
+    },
+    zh: {
+      type: Type.STRING,
+      description: "Short Traditional Chinese color keyword.",
+    },
+    hex: {
+      type: Type.STRING,
+      description:
+        "Representative RGB hex color code for this color, formatted as #RRGGBB.",
+    },
+  },
+  required: ["en", "zh", "hex"],
+};
+
 const responseSchema = {
   type: Type.OBJECT,
   properties: {
@@ -39,9 +63,9 @@ const responseSchema = {
     },
     colors: {
       type: Type.ARRAY,
-      items: bilingualTextSchema,
+      items: colorKeywordSchema,
       description:
-        "Three to six short color keywords, each with English and Traditional Chinese.",
+        "Three to six short color keywords, each with English, Traditional Chinese, and an approximate #RRGGBB hex color code.",
     },
     mood: {
       type: Type.ARRAY,
@@ -85,7 +109,7 @@ Every field must be bilingual:
 - zh: Traditional Chinese, suitable for Hong Kong readers
 Focus on:
 - visual style
-- color palette as short keyword chips
+- color palette as short keyword chips with approximate #RRGGBB hex codes
 - mood and atmosphere as short keyword chips
 - layout and spatial structure
 - lighting
@@ -147,7 +171,7 @@ function normalizeAnalysis(value: unknown): StyleAnalysis {
 
   return {
     style: requireBilingualText(record.style, "style"),
-    colors: requireBilingualTextArray(record.colors, "colors"),
+    colors: requireColorKeywordArray(record.colors, "colors"),
     mood: requireBilingualTextArray(record.mood, "mood"),
     layout: requireBilingualText(record.layout, "layout"),
     lighting: requireBilingualText(record.lighting, "lighting"),
@@ -183,6 +207,37 @@ function requireBilingualTextArray(value: unknown, key: string): BilingualText[]
   }
 
   return items;
+}
+
+function requireColorKeywordArray(value: unknown, key: string): ColorKeyword[] {
+  if (!Array.isArray(value)) {
+    throw new Error(`invalid_${key}`);
+  }
+
+  const items = value.map((item, index) =>
+    requireColorKeyword(item, `${key}_${index}`),
+  );
+
+  if (items.length === 0) {
+    throw new Error(`invalid_${key}`);
+  }
+
+  return items;
+}
+
+function requireColorKeyword(value: unknown, key: string): ColorKeyword {
+  const text = requireBilingualText(value, key);
+  const record = value as Partial<ColorKeyword>;
+  const hex = requireString(record.hex, `${key}_hex`).toUpperCase();
+
+  if (!/^#[0-9A-F]{6}$/.test(hex)) {
+    throw new Error(`invalid_${key}_hex`);
+  }
+
+  return {
+    ...text,
+    hex,
+  };
 }
 
 function requireString(value: unknown, key: string): string {

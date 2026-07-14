@@ -6,6 +6,7 @@ import {
   ImageUp,
   Loader2,
   Palette,
+  PanelsTopLeft,
   RotateCcw,
   Sparkles,
   SunMedium,
@@ -15,7 +16,7 @@ import { ChangeEvent, DragEvent, useEffect, useMemo, useState } from "react";
 
 type StyleAnalysis = {
   style: BilingualText;
-  colors: BilingualText[];
+  colors: ColorKeyword[];
   mood: BilingualText[];
   layout: BilingualText;
   lighting: BilingualText;
@@ -26,6 +27,10 @@ type StyleAnalysis = {
 type BilingualText = {
   en: string;
   zh: string;
+};
+
+type ColorKeyword = BilingualText & {
+  hex: string;
 };
 
 const ACCEPTED_TYPES = ["image/jpeg", "image/png", "image/webp"];
@@ -248,19 +253,19 @@ export default function Home() {
               </ResultItem>
 
               <ResultItem icon={<Palette size={16} />} label="Colors">
-                <ChipList items={analysis.colors} />
+                <ColorChipList items={analysis.colors} />
               </ResultItem>
 
               <ResultItem icon={<SunMedium size={16} />} label="Mood">
                 <ChipList items={analysis.mood} />
               </ResultItem>
 
-              <ResultItem label="Lighting">
-                <BilingualValue value={analysis.lighting} />
+              <ResultItem icon={<PanelsTopLeft size={16} />} label="Layout">
+                <BilingualValue value={analysis.layout} />
               </ResultItem>
 
-              <ResultItem label="Layout" full>
-                <BilingualValue value={analysis.layout} />
+              <ResultItem label="Lighting" full>
+                <BilingualValue value={analysis.lighting} />
               </ResultItem>
 
               <ResultItem label="Composition" full>
@@ -324,6 +329,26 @@ function ChipList({ items }: { items: BilingualText[] }) {
           <span className="keyword-text">{item.en}</span>
           <span className="keyword-divider" aria-hidden="true" />
           <span className="keyword-text zh">{item.zh}</span>
+        </span>
+      ))}
+    </div>
+  );
+}
+
+function ColorChipList({ items }: { items: ColorKeyword[] }) {
+  return (
+    <div className="chips">
+      {items.map((item) => (
+        <span className="chip keyword-chip color-chip" key={`${item.en}-${item.hex}`}>
+          <span
+            className="color-swatch"
+            style={{ backgroundColor: item.hex }}
+            aria-hidden="true"
+          />
+          <span className="keyword-text">{item.en}</span>
+          <span className="keyword-divider" aria-hidden="true" />
+          <span className="keyword-text zh">{item.zh}</span>
+          <span className="hex-code">{item.hex}</span>
         </span>
       ))}
     </div>
