@@ -116,7 +116,7 @@ Focus on:
 - composition
 - one reusable prompt summary`;
 
-const GEMINI_TIMEOUT_MS = 20_000;
+const GEMINI_TIMEOUT_MS = 45_000;
 const GEMINI_MAX_ATTEMPTS = 2;
 
 export async function analyzeImageWithGemini({

@@ -98,7 +98,12 @@ function isTimeoutError(error: unknown): boolean {
   }
 
   const message = `${error.name} ${error.message}`.toLowerCase();
-  return message.includes("timeout") || message.includes("timed out");
+  return (
+    error.name === "AbortError" ||
+    message.includes("aborted") ||
+    message.includes("timeout") ||
+    message.includes("timed out")
+  );
 }
 
 function jsonError(
