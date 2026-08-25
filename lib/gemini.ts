@@ -116,6 +116,9 @@ Focus on:
 - composition
 - one reusable prompt summary`;
 
+const GEMINI_TIMEOUT_MS = 20_000;
+const GEMINI_MAX_ATTEMPTS = 2;
+
 export async function analyzeImageWithGemini({
   base64,
   mimeType,
@@ -129,7 +132,13 @@ export async function analyzeImageWithGemini({
     throw new Error("missing_api_key");
   }
 
-  const client = new GoogleGenAI({ apiKey });
+  const client = new GoogleGenAI({
+    apiKey,
+    httpOptions: {
+      timeout: GEMINI_TIMEOUT_MS,
+      retryOptions: { attempts: GEMINI_MAX_ATTEMPTS },
+    },
+  });
   const model = process.env.GEMINI_MODEL || "gemini-3.5-flash";
 
   const result = await client.models.generateContent({

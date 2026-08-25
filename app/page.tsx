@@ -41,6 +41,7 @@ export default function Home() {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [analysis, setAnalysis] = useState<StyleAnalysis | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [canRetry, setCanRetry] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -66,6 +67,7 @@ export default function Home() {
 
   function selectFile(nextFile: File | undefined) {
     setError(null);
+    setCanRetry(false);
     setAnalysis(null);
 
     if (!nextFile) {
@@ -115,7 +117,7 @@ export default function Home() {
 
     setIsLoading(true);
     setError(null);
-    setAnalysis(null);
+    setCanRetry(false);
 
     try {
       const formData = new FormData();
@@ -126,9 +128,13 @@ export default function Home() {
         body: formData,
       });
 
-      const payload = await response.json();
+      const payload = (await response.json()) as StyleAnalysis & {
+        error?: string;
+        retryable?: boolean;
+      };
 
       if (!response.ok) {
+        setCanRetry(Boolean(payload.retryable));
         throw new Error(payload.error || "The image could not be analyzed.");
       }
 
@@ -148,6 +154,7 @@ export default function Home() {
     setFile(null);
     setAnalysis(null);
     setError(null);
+    setCanRetry(false);
   }
 
   return (
@@ -225,7 +232,19 @@ export default function Home() {
           {error ? (
             <div className="error" role="alert">
               <AlertCircle size={20} aria-hidden="true" />
-              <span>{error}</span>
+              <div className="error-content">
+                <span>{error}</span>
+                {canRetry ? (
+                  <button
+                    className="retry-button"
+                    type="button"
+                    onClick={analyzeImage}
+                    disabled={isLoading}
+                  >
+                    Retry
+                  </button>
+                ) : null}
+              </div>
             </div>
           ) : null}
         </section>
